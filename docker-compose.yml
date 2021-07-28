@@ -1,0 +1,8 @@
+services:
+    styrobot:
+        build: .
+        volumes:
+            - ./persist/:/tmp/persist/
+            - ./secrets/:/tmp/secrets/
+        restart: unless-stopped
+        command: bash -c "cd /app/ && git clone https://github.com/dunnousername/styrobot.git && cd styrobot && python3 -m styrobot git"
