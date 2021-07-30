@@ -72,7 +72,7 @@ class RepostCog(commands.Cog):
             # not in the right channel
             return
         
-        images = await message_util.get_images(message)
+        images = await message_util.get_images(message, attempts=8)
         
         if len(images) == 0:
             # nothing interesting
