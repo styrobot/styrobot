@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from styrobot.util import database
+from styrobot.util import database, auth
 import traceback
 
 class SettingsCog(commands.Cog):
@@ -16,7 +16,7 @@ class SettingsCog(commands.Cog):
         return ret
     
     def valid_name(self, setting):
-        return setting.replace('.', '').isalnum()
+        return setting.replace('.', '').replace(',', '').isalnum()
     
     async def send_help(self, ctx):
         embed = discord.Embed(title='Subcommands')
@@ -36,18 +36,8 @@ class SettingsCog(commands.Cog):
         conn = self.conn_for_guild(ctx.guild.id)
         # settings.manage is a role ID that dictates who, in addition
         # to admins, can manage guild settings.
-        auth = False
-        if ctx.author.guild_permissions.administrator:
-            auth = True
-        else:
-            role_str = database.get_guild_setting(None, 'settings.manage', default=None, con=conn)
-            if (role_str is not None) and (role_str.is_numeric()):
-                role_id = int(role_str)
-                for role in ctx.author.roles:
-                    if role.id == role_id:
-                        auth = True
-                        break
-        if not auth:
+        authorized = auth.is_authorized(ctx.author, con=conn)
+        if not authorized:
             await ctx.send('You are not authorized to manage settings. You must have either the "administrator" permission, or have the role given by the role ID in the `settings.manage` setting.')
             return
         
