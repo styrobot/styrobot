@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
 
-extensions = ["styrobot.cogs.reactions"]
+extensions = ["styrobot.cogs.reactions", "styrobot.cogs.settings"]
 
 version = sys.argv[1]
 staging = (version == 'staging')
