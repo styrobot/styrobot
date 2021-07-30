@@ -6,6 +6,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     git
 
 RUN python3 -m pip install -U \
-    discord.py
+    discord.py \
+    discord-py-slash-command
+
 
 WORKDIR /app/
