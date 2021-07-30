@@ -4,6 +4,7 @@ import discord
 import re
 import io
 import traceback
+from discord.errors import NotFound
 from wand.image import Image
 
 url_re = re.compile(r'https?://[^ \n]+(?: |\n|$)')
@@ -49,3 +50,25 @@ async def get_images(message: discord.Message, attempts=1):
         ])
     
     return [result for result in results if result is not None]
+
+async def image_walk(message: discord.Message, attempts=5):
+    # first, check if this image has a message
+    x = await get_images(message, attempts=1)
+    if len(x) > 0:
+        return x[0]
+    # second, check replies
+    if message.reference:
+        try:
+            msg = await message.channel.fetch_message(message.reference.id)
+        except (AttributeError, KeyError, NotFound):
+            pass
+        else:
+            x = await get_images(msg.reference, attempts=1)
+            if len(x) > 0:
+                return x[0]
+    # next, perform the actual walk
+    async for msg in message.channel.history(before=message, limit=attempts):
+        x = await get_images(msg, attempts=1)
+        if len(x) > 0:
+            return x[0]
+    return None
