@@ -7,7 +7,7 @@ import discord
 import imagehash
 from discord.ext import commands
 from PIL import Image as PILImage
-from styrobot.util import auth, database
+from styrobot.util import auth, database, misc
 from styrobot.util import message as message_util
 from wand.image import Image
 
@@ -48,6 +48,7 @@ class RepostCog(commands.Cog):
         # this should clear up empty space in an image
         image.liquid_rescale(1024, 1024)
         i = PILImage.open(io.BytesIO(image.make_blob('jpeg')))
+        misc.incinerate(i)
         h = imagehash.whash(i)
         if len(self.repost_cache[message.guild.id]) > 0:
             best = min(self.repost_cache[message.guild.id], key=lambda x: h-x)
