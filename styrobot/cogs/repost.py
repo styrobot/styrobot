@@ -8,6 +8,7 @@ import imagehash
 from discord.ext import commands
 from PIL import Image as PILImage
 from styrobot.util import auth, database
+from styrobot.util import message as message_util
 from wand.image import Image
 
 
@@ -42,35 +43,20 @@ class RepostCog(commands.Cog):
         con.commit()
         self.repost_cache[guild_id].append(x)
 
-    async def check_repost(self, url, message):
-        try:
-            buf = b''
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
-                    while not response.content.at_eof():
-                        buf = buf + await response.content.read(8_000_000)
-                        if len(buf) > 8_000_000:
-                            # too big
-                            response.close()
-                            return
-            b = io.BytesIO(buf)
-            with Image(blob=b) as image:
-                image.resize(2048, 2048)
-                # this should clear up empty space in an image
-                image.liquid_rescale(1024, 1024)
-                i = PILImage.open(io.BytesIO(image.make_blob('jpeg')))
-        except Exception:
-            traceback.print_exc()
-        else:
-            h = imagehash.whash(i)
-            if len(self.repost_cache[message.guild.id]) > 0:
-                best = min(self.repost_cache[message.guild.id], key=lambda x: h-x)
-                if (best is not None) and (h - best < 8):
-                    cur = self.conn_for_guild(message.guild.id).cursor()
-                    cur.execute('SELECT link FROM reposts WHERE hash=?', (str(best),))
-                    link = cur.fetchone()[0]
-                    await message.reply(f'Repost! (distance {h-best}): {link}')
-            self.add_hash(message.guild.id, h, message.jump_url)
+    async def check_repost(self, image: Image, message):   
+        image.resize(2048, 2048)
+        # this should clear up empty space in an image
+        image.liquid_rescale(1024, 1024)
+        i = PILImage.open(io.BytesIO(image.make_blob('jpeg')))
+        h = imagehash.whash(i)
+        if len(self.repost_cache[message.guild.id]) > 0:
+            best = min(self.repost_cache[message.guild.id], key=lambda x: h-x)
+            if (best is not None) and (h - best < 8):
+                cur = self.conn_for_guild(message.guild.id).cursor()
+                cur.execute('SELECT link FROM reposts WHERE hash=?', (str(best),))
+                link = cur.fetchone()[0]
+                await message.reply(f'Repost! (distance {h-best}): {link}')
+        self.add_hash(message.guild.id, h, message.jump_url)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -85,26 +71,15 @@ class RepostCog(commands.Cog):
         if str(message.channel.id) not in channels:
             # not in the right channel
             return
-        urls = []
-
-        urls.extend([a.url for a in message.attachments if
-            (a.size < 8_000_000) and (a.content_type in 'image/png;image/jpeg;image/webp'.split(';'))
-        ])
-        urls.extend([
-            e.image.url for e in message.embeds if
-            e.image and e.image.url
-        ])
-        urls.extend([
-            x.strip() for x in re.findall(r'https?://[^ \n]+(?: |\n|$)', message.content) if x
-        ])
-        urls = urls[:8]
-
-        if len(urls) == 0:
+        
+        images = await message_util.get_images(message)
+        
+        if len(images) == 0:
             # nothing interesting
             return
         
-        for url in urls:
-            await self.check_repost(url, message)
+        for image in images:
+            await self.check_repost(image, message)
     
     @commands.command(name='repost.clear')
     async def repost_clear(self, ctx: commands.Context):
