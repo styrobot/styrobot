@@ -1,7 +1,7 @@
+import asyncio
 import io
 import re
 import traceback
-
 import aiohttp
 import discord
 import imagehash
@@ -10,6 +10,20 @@ from PIL import Image as PILImage
 from styrobot.util import auth, database, misc
 from styrobot.util import message as message_util
 from wand.image import Image
+import imageio
+import numpy as np
+
+
+def create_hash(arr):
+    image = Image.from_array(arr)
+    image.resize(2048, 2048)
+    # this should clear up empty space in an image
+    image.liquid_rescale(1024, 1024)
+    with PILImage.fromarray(np.array(image)) as i:
+        misc.incinerate(image)
+        h = imagehash.whash(i)
+        print(h)
+    return h
 
 
 class RepostCog(commands.Cog):
@@ -42,13 +56,9 @@ class RepostCog(commands.Cog):
         await con.commit()
         self.repost_cache[guild_id].append(x)
 
-    async def check_repost(self, image: Image, message):   
-        image.resize(2048, 2048)
-        # this should clear up empty space in an image
-        image.liquid_rescale(1024, 1024)
-        with PILImage.open(io.BytesIO(image.make_blob('jpeg'))) as i:
-            misc.incinerate(image)
-            h = imagehash.whash(i)
+    async def check_repost(self, image, message):
+        loop: asyncio.AbstractEventLoop = self.bot.loop
+        h = await loop.run_in_executor(None, create_hash, image)
         if len(self.repost_cache[message.guild.id]) > 0:
             best = min(self.repost_cache[message.guild.id], key=lambda x: h-x)
             if (best is not None) and (h - best < 8):
