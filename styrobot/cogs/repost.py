@@ -32,10 +32,10 @@ class RepostCog(commands.Cog):
         cur = await ret.execute('SELECT hash FROM reposts')
         self.repost_cache[id] = [self.load_hash(x[0]) for x in await cur.fetchall()]
         return ret
-    
+
     def load_hash(self, x):
         return imagehash.hex_to_hash(x)
-        
+
     async def add_hash(self, guild_id, x, link):
         con = await self.conn_for_guild(guild_id)
         await con.execute('INSERT INTO reposts VALUES (?,?)', (str(x), link))
@@ -46,9 +46,9 @@ class RepostCog(commands.Cog):
         image.resize(2048, 2048)
         # this should clear up empty space in an image
         image.liquid_rescale(1024, 1024)
-        i = PILImage.open(io.BytesIO(image.make_blob('jpeg')))
-        misc.incinerate(i)
-        h = imagehash.whash(i)
+        with PILImage.open(io.BytesIO(image.make_blob('jpeg'))) as i:
+            misc.incinerate(image)
+            h = imagehash.whash(i)
         if len(self.repost_cache[message.guild.id]) > 0:
             best = min(self.repost_cache[message.guild.id], key=lambda x: h-x)
             if (best is not None) and (h - best < 8):
@@ -67,7 +67,8 @@ class RepostCog(commands.Cog):
             # we don't care about DMs
             return
         conn = await self.conn_for_guild(message.guild.id)
-        channels = await database.get_guild_setting(None, 'reposts.channel', con=conn, default='').split(',')
+        channels = await database.get_guild_setting(None, 'reposts.channel', con=conn, default='')
+        channels = channels.split(',')
         if str(message.channel.id) not in channels:
             # not in the right channel
             return
