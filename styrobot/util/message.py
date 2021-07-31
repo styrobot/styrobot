@@ -9,6 +9,7 @@ from wand.image import Image
 
 url_re = re.compile(r'https?://[^ \n]+(?: |\n|$)')
 
+
 async def get_image_from_url(session, url):
     try:
         buf = b''
@@ -24,6 +25,7 @@ async def get_image_from_url(session, url):
     except Exception:
         traceback.print_exc()
     return None
+
 
 async def get_images(message: discord.Message, attempts=1):
     urls = []
@@ -50,6 +52,7 @@ async def get_images(message: discord.Message, attempts=1):
         ])
     
     return [result for result in results if result is not None]
+
 
 async def image_walk(message: discord.Message, attempts=5):
     # first, check if this image has a message

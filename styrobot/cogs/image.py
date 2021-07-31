@@ -5,6 +5,7 @@ import io
 
 from styrobot.util import message
 
+
 def image_command(name):
     def deco(func):
         async def wrapper(self, ctx: commands.Context):
@@ -23,6 +24,7 @@ def image_command(name):
         return commands.command(name=name)(wrapper)
     return deco
 
+
 class ImageCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -32,6 +34,7 @@ class ImageCog(commands.Cog):
         bg = Image(width=img.width, height=img.height, pseudo='canvas:lightgray')
         bg.composite(img)
         return bg
+
 
 def setup(bot):
     bot.add_cog(ImageCog(bot))

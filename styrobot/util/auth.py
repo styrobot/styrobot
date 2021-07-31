@@ -1,5 +1,6 @@
 from . import database
 
+
 async def is_authorized(user, guild_id=None, con=None):
     if user.guild_permissions.administrator:
         return True

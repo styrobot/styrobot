@@ -4,6 +4,7 @@ import inspect
 from styrobot.util import database
 from styrobot.util import message as message_util
 
+
 class CopypastaCog(commands.Cog):
     """
     Enabled individually via settings, "copypasta.<name>" (set it to "true", without quotes)
@@ -47,6 +48,7 @@ class CopypastaCog(commands.Cog):
             await self.reply_copypasta(message, 'ping')
         if message_util.url_re.search(message.content) and not message.channel.permissions_for(message.author).embed_links:
             await self.reply_copypasta(message, 'embed')
-    
+
+
 def setup(bot):
     bot.add_cog(CopypastaCog(bot))
