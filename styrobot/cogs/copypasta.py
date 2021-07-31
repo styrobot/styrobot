@@ -20,7 +20,7 @@ class CopypastaCog(commands.Cog):
     }
 
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: commands.Bot = bot
         self.conn_cache = {}
     
     async def conn_for_guild(self, id):
@@ -43,10 +43,12 @@ class CopypastaCog(commands.Cog):
         if message.author.bot:
             # only do this for real users
             return
+
         conn = await self.conn_for_guild(message.guild.id)
-        if (not message.author.guild_permissions.mention_everyone) and (('@everyone' in message.content) or ('@here' in message.content)):
+        perms: discord.Permissions = message.channel.permissions_for(message.author)
+        if not perms.mention_everyone and (('@everyone' in message.content) or ('@here' in message.content)):
             await self.reply_copypasta(message, 'ping')
-        if message_util.url_re.search(message.content) and not message.channel.permissions_for(message.author).embed_links:
+        elif message_util.url_re.search(message.content) and not perms.embed_links:
             await self.reply_copypasta(message, 'embed')
 
 
