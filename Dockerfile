@@ -12,7 +12,8 @@ RUN python3 -m pip install -U \
     imagehash \
     Wand \
     aiosqlite \
-    imageio
+    imageio \
+    yfinance
 
 
 WORKDIR /app/
