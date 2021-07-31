@@ -3,6 +3,7 @@ from discord.ext import commands
 import inspect
 from styrobot.util import database
 from styrobot.util import message as message_util
+import asyncio
 
 
 class CopypastaCog(commands.Cog):
@@ -33,7 +34,11 @@ class CopypastaCog(commands.Cog):
     async def reply_copypasta(self, message: discord.Message, name):
         conn = await self.conn_for_guild(message.guild.id)
         if (await database.get_guild_setting(None, f'copypasta.{name}', con=conn)) == 'true':
-            await message.reply(inspect.cleandoc(self.copypastas[name]))
+            msg = await message.reply(inspect.cleandoc(self.copypastas[name]))
+
+        if (await database.get_guild_setting(None, "copypasta.autodelete", con=conn)) == "true":
+            await asyncio.sleep(10)
+            await msg.delete()
     
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
