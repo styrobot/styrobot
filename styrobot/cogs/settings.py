@@ -8,10 +8,10 @@ class SettingsCog(commands.Cog):
         self.bot = bot
         self.conn_cache = {}
     
-    def conn_for_guild(self, id):
+    async def conn_for_guild(self, id):
         if id in self.conn_cache:
             return self.conn_cache[id]
-        ret = database.open_guild_database(id)
+        ret = await database.open_guild_database(id)
         self.conn_cache[id] = ret
         return ret
     
@@ -33,27 +33,27 @@ class SettingsCog(commands.Cog):
         if ctx.guild is None:
             # these are guild settings, irrelevant outside of a guild
             return
-        conn = self.conn_for_guild(ctx.guild.id)
+        conn = await self.conn_for_guild(ctx.guild.id)
         # settings.manage is a role ID that dictates who, in addition
         # to admins, can manage guild settings.
-        authorized = auth.is_authorized(ctx.author, con=conn)
+        authorized = await auth.is_authorized(ctx.author, con=conn)
         if not authorized:
             await ctx.send('You are not authorized to manage settings. You must have either the "administrator" permission, or have the role given by the role ID in the `settings.manage` setting.')
             return
         
-        database.create_guild_settings_table(conn)
+        await database.create_guild_settings_table(conn)
 
         if (len(args) == 0) or (args[0] == 'help'):
             await self.send_help(ctx)
         elif (args[0] == 'clear') and (len(args) == 1):
-            conn.execute('DROP TABLE settings')
-            conn.commit()
+            await conn.execute('DROP TABLE settings')
+            await conn.commit()
             await ctx.send('Cleared all guild settings.')
         elif (args[0] == 'get') and (len(args) == 2):
             if not self.valid_name(args[1]):
                 await ctx.send('invalid key')
                 return
-            s = database.get_guild_setting(None, args[1], default=None, con=conn)
+            s = await database.get_guild_setting(None, args[1], default=None, con=conn)
             embed = discord.Embed()
             embed.title = 'Result'
             embed.add_field(name='key', value=args[1], inline=False)
@@ -68,22 +68,21 @@ class SettingsCog(commands.Cog):
             if not self.valid_name(args[2]):
                 await ctx.send('invalid value')
                 return
-            conn.execute('INSERT OR REPLACE INTO settings VALUES (?,?)', (args[1], args[2]))
-            conn.commit()
+            await conn.execute('INSERT OR REPLACE INTO settings VALUES (?,?)', (args[1], args[2]))
+            await conn.commit()
             await ctx.send('Successfully set setting.')
         elif (args[0] == 'del') and (len(args) == 2):
             if not self.valid_name(args[1]):
                 await ctx.send('invalid key')
                 return
-            conn.execute('DELETE FROM settings WHERE key=?', (args[1],))
-            conn.commit()
+            await conn.execute('DELETE FROM settings WHERE key=?', (args[1],))
+            await conn.commit()
             await ctx.send('Successfully removed key.')
         elif (args[0] == 'list') and (len(args) == 1):
-            cur = conn.cursor()
-            cur.execute('SELECT key FROM settings')
+            cur = await conn.execute('SELECT key FROM settings')
             s = ''
             while True:
-                x = cur.fetchone()
+                x = await cur.fetchone()
                 if x is None:
                     break
                 if len(s) + len(x[0]) > 1980:

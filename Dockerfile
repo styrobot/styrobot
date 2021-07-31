@@ -10,7 +10,8 @@ RUN python3 -m pip install -U \
     discord.py \
     discord-py-slash-command \
     imagehash \
-    Wand
+    Wand \
+    aiosqlite
 
 
 WORKDIR /app/
