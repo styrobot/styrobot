@@ -6,11 +6,12 @@ import io
 import traceback
 from discord.errors import NotFound
 from wand.image import Image
+import imageio
 
 url_re = re.compile(r'https?://[^ \n]+(?: |\n|$)')
 
 
-async def get_image_from_url(session, url):
+async def get_image_from_url(session, url, return_imageio_reader=False):
     try:
         buf = b''
         async with session.get(url) as response:
@@ -20,8 +21,12 @@ async def get_image_from_url(session, url):
                     # too big
                     response.close()
                     return None
-        b = io.BytesIO(buf)
-        return Image(blob=b)
+        with io.BytesIO(buf) as b:
+            if not return_imageio_reader:
+                return Image(blob=b)
+            else:
+                b.seek(0)
+                return imageio.imread(b)
     except Exception:
         traceback.print_exc()
     return None
@@ -48,9 +53,9 @@ async def get_images(message: discord.Message, attempts=1):
 
     async with aiohttp.ClientSession() as session:
         results = await asyncio.gather(*[
-            get_image_from_url(session, url) for url in urls
+            get_image_from_url(session, url, return_imageio_reader=True) for url in urls
         ])
-    
+
     return [result for result in results if result is not None]
 
 
