@@ -1,1 +1,1 @@
-from . import database, auth, message, misc, checks
+from . import database, auth, message, misc, checks, contrib

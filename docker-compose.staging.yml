@@ -6,4 +6,6 @@ services:
             - ./secrets/:/tmp/secrets/
             - ./styrobot/:/app/styrobot/
         restart: unless-stopped
+        environment:
+            - PYTHONUNBUFFERED=1
         command: bash -c "cd /app/ && python3 -m styrobot staging"
