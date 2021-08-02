@@ -7,13 +7,14 @@ import traceback
 import requests
 import time
 
+
 class Asset(object):
     def __init__(self, symbol=None, name=None, price=None, url=None):
         self.symbol = symbol
         self.name = name
         self.price = price
         self.url = url
-    
+
     def to_embed(self):
         e = discord.Embed(title=self.symbol)
         e.add_field(name='Ticker', value=self.symbol, inline=False)
@@ -23,16 +24,17 @@ class Asset(object):
             e.set_image(url=self.url)
         return e
 
+
 class Market(object):
     def __init__(self, max_reqs, wait_time):
         self.semaphore = threading.Semaphore(value=max_reqs)
         self.wait_time = wait_time
-    
+
     async def release(self):
         # wait, for rate limiting
         await asyncio.sleep(self.wait_time)
         self.semaphore.release()
-    
+
     async def get(self, symbol):
         for i in range(20):
             if self.semaphore.acquire(blocking=False):
@@ -48,6 +50,7 @@ class Market(object):
             await asyncio.sleep(0.1)
         raise TimeoutError()
 
+
 class StockMarket(Market):
     def _get(self, symbol):
         try:
@@ -59,8 +62,10 @@ class StockMarket(Market):
         except KeyError:
             return None
 
+
 class OSRSMarket(Market):
     base_url = 'https://secure.runescape.com/m=itemdb_oldschool/api/catalogue/items.json?category=1&alpha=%23&page=1'
+
     def find_item(self, name, page=1):
         if name[0].isnumeric():
             url = f'https://secure.runescape.com/m=itemdb_oldschool/api/catalogue/items.json?category=1&alpha=%23&page={page}'
@@ -80,7 +85,7 @@ class OSRSMarket(Market):
         # try searching deeper
         # rate limiting
         time.sleep(1.2)
-        r = self.find_item(name, page=page+1)
+        r = self.find_item(name, page=page + 1)
         if r is None:
             # it doesn't exist verbatim anywhere
             # try seeing if a similar item exists
@@ -92,12 +97,13 @@ class OSRSMarket(Market):
             return None
         # it does exist
         return r
-    
+
     def _get(self, symbol):
         x = self.find_item(symbol.lower())
         if x is None:
             return None
         return Asset(symbol=symbol, name=x[0], price=x[1], url=x[2])
+
 
 class ForexMarket(Market):
     initial_lock = threading.Lock()
@@ -127,6 +133,7 @@ class ForexMarket(Market):
         price = 1.0 / j['rates'][ticker]
         return Asset(symbol=ticker, name=self.full_names[ticker], price=price)
 
+
 class CryptoMarket(Market):
     initial_lock = threading.Lock()
     initial_done = False
@@ -149,6 +156,7 @@ class CryptoMarket(Market):
                 return Asset(symbol=j['symbol'].upper(), name=j['name'], price=j['market_data']['current_price']['usd'])
         return None
 
+
 class FinanceCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -156,7 +164,7 @@ class FinanceCog(commands.Cog):
         self.osrs_market = OSRSMarket(4, 30)
         self.forex_market = ForexMarket(15, 30)
         self.crypto_market = CryptoMarket(4, 30)
-    
+
     async def get_info(self, ticker):
         if len(ticker) < 2:
             raise ValueError()
@@ -181,7 +189,7 @@ class FinanceCog(commands.Cog):
     @commands.group(name='stonks')
     async def stonks(self, ctx: commands.Context):
         pass
-    
+
     @stonks.command(name='info')
     async def info(self, ctx: commands.Context, *ticker):
         """
@@ -205,7 +213,7 @@ class FinanceCog(commands.Cog):
                 await ctx.reply('Too many requests; try again in a minute or so.')
             except:
                 traceback.print_exc()
-    
+
     @stonks.command(name='convert')
     async def convert(self, ctx: commands.Context, fro, to):
         async with ctx.typing():
@@ -214,7 +222,7 @@ class FinanceCog(commands.Cog):
                     self.get_info(fro),
                     self.get_info(to)
                 )
-                
+
                 if (fro_asset is None) or (to_asset is None):
                     await ctx.reply('An error occurred while fetching at least one of the assets')
                 else:
@@ -229,6 +237,7 @@ class FinanceCog(commands.Cog):
                 await ctx.reply('Too many requests; try again in a minute or so.')
             except:
                 traceback.print_exc()
-    
+
+
 def setup(bot):
     bot.add_cog(FinanceCog(bot))

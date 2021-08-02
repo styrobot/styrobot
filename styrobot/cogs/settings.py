@@ -3,6 +3,7 @@ from discord.ext import commands
 from styrobot.util import database, auth, checks
 import traceback
 
+
 class SettingsCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -105,7 +106,6 @@ class SettingsCog(commands.Cog):
         s = '```' + s + '\n```'
         await ctx.send(s)
 
-        
 
 def setup(bot):
     bot.add_cog(SettingsCog(bot))

@@ -3,11 +3,12 @@ from discord.ext import commands
 from styrobot.util.contrib import info
 import random
 
+
 class BetterHelpCommand(commands.HelpCommand):
     async def send_embed(self, embed):
         embed.colour = discord.Colour.random()
         await self.get_destination().send(embed=embed)
-    
+
     def blank_line(self, embed):
         embed.add_field(name='_ _', value='_ _', inline=False)
 
@@ -81,13 +82,15 @@ class BetterHelpCommand(commands.HelpCommand):
         e.add_field(name='Signature', value=(self.signature(command)), inline=False)
         e.add_field(name='Help', value=(command.help or '[no help]'), inline=False)
         await self.send_embed(e)
-        
+
+
 class HelpCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         help_command = BetterHelpCommand()
         help_command.cog = self
         self.bot.help_command = help_command
+
 
 def setup(bot):
     bot.add_cog(HelpCog(bot))
