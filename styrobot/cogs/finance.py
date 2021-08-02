@@ -207,7 +207,7 @@ class FinanceCog(commands.Cog):
                 traceback.print_exc()
     
     @stonks.command(name='convert')
-    async def info(self, ctx: commands.Context, fro, to):
+    async def convert(self, ctx: commands.Context, fro, to):
         async with ctx.typing():
             try:
                 fro_asset, to_asset = await asyncio.gather(
