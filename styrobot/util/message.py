@@ -26,7 +26,8 @@ async def get_image_from_url(session, url, return_imageio_reader=False):
                 return Image(blob=b)
             else:
                 b.seek(0)
-                return imageio.imread(b)
+                a = imageio.imread(b)
+                return a
     except Exception:
         traceback.print_exc()
     return None
@@ -59,7 +60,7 @@ async def get_images(message: discord.Message, attempts=1, use_imageio=False):
 
 async def image_walk(message: discord.Message, attempts=5, use_imageio=False):
     # first, check if this image has a message
-    x = await get_images(message, attempts=1)
+    x = await get_images(message, attempts=1, use_imageio=use_imageio)
     if len(x) > 0:
         return x[0]
     # second, check replies
@@ -69,12 +70,12 @@ async def image_walk(message: discord.Message, attempts=5, use_imageio=False):
         except (AttributeError, KeyError, NotFound):
             pass
         else:
-            x = await get_images(msg.reference, attempts=1, use_imageio=False)
+            x = await get_images(msg.reference, attempts=1, use_imageio=use_imageio)
             if len(x) > 0:
                 return x[0]
     # next, perform the actual walk
     async for msg in message.channel.history(before=message, limit=attempts):
-        x = await get_images(msg, attempts=1)
+        x = await get_images(msg, attempts=1, use_imageio=use_imageio)
         if len(x) > 0:
             return x[0]
     return None
