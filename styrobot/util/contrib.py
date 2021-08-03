@@ -1,4 +1,4 @@
 info = {
-    'repo': 'https://github.com/dunnousername/styrobot',
+    'repo': 'https://github.com/styrobot/styrobot',
     'name': 'styrobot'
 }
