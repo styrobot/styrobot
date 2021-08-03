@@ -11,7 +11,7 @@ import imageio
 url_re = re.compile(r'https?://[^ \n]+(?: |\n|$)')
 
 
-async def get_image_from_url(session, url, return_imageio_reader=False):
+async def get_image_from_url(session, url, return_imageio_reader=False, keep_urls=False):
     try:
         buf = b''
         async with session.get(url) as response:
@@ -23,16 +23,20 @@ async def get_image_from_url(session, url, return_imageio_reader=False):
                     return None
         with io.BytesIO(buf) as b:
             if not return_imageio_reader:
-                return Image(blob=b)
+                im = Image(blob=b)
             else:
                 b.seek(0)
-                return imageio.imread(b)
+                im = imageio.imread(b)
+            if keep_urls:
+                return im, url
+            else:
+                return im
     except Exception:
         traceback.print_exc()
     return None
 
 
-async def get_images(message: discord.Message, attempts=1):
+async def get_images(message: discord.Message, attempts=1, keep_urls=False):
     urls = []
 
     urls.extend([a.url for a in message.attachments if
@@ -53,15 +57,15 @@ async def get_images(message: discord.Message, attempts=1):
 
     async with aiohttp.ClientSession() as session:
         results = await asyncio.gather(*[
-            get_image_from_url(session, url, return_imageio_reader=True) for url in urls
+            get_image_from_url(session, url, return_imageio_reader=True, keep_urls=keep_urls) for url in urls
         ])
 
     return [result for result in results if result is not None]
 
 
-async def image_walk(message: discord.Message, attempts=5):
+async def image_walk(message: discord.Message, attempts=5, keep_urls=False):
     # first, check if this image has a message
-    x = await get_images(message, attempts=1)
+    x = await get_images(message, attempts=1, keep_urls=keep_urls)
     if len(x) > 0:
         return x[0]
     # second, check replies
@@ -71,12 +75,12 @@ async def image_walk(message: discord.Message, attempts=5):
         except (AttributeError, KeyError, NotFound):
             pass
         else:
-            x = await get_images(msg.reference, attempts=1)
+            x = await get_images(msg.reference, attempts=1, keep_urls=keep_urls)
             if len(x) > 0:
                 return x[0]
     # next, perform the actual walk
     async for msg in message.channel.history(before=message, limit=attempts):
-        x = await get_images(msg, attempts=1)
+        x = await get_images(msg, attempts=1, keep_urls=keep_urls)
         if len(x) > 0:
             return x[0]
     return None

@@ -10,7 +10,8 @@ extensions = [
     "styrobot.cogs.image",
     "styrobot.cogs.copypasta",
     "styrobot.cogs.finance",
-    "styrobot.cogs.help"
+    "styrobot.cogs.help",
+    "styrobot.cogs.saucenao"
 ]
 
 version = sys.argv[1]
