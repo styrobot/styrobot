@@ -32,7 +32,7 @@ async def get_image_from_url(session, url, return_imageio_reader=False):
     return None
 
 
-async def get_images(message: discord.Message, attempts=1):
+async def get_images(message: discord.Message, attempts=1, use_imageio=False):
     urls = []
 
     urls.extend([a.url for a in message.attachments if
@@ -52,14 +52,12 @@ async def get_images(message: discord.Message, attempts=1):
         return []
 
     async with aiohttp.ClientSession() as session:
-        results = await asyncio.gather(*[
-            get_image_from_url(session, url, return_imageio_reader=True) for url in urls
-        ])
+        results = await asyncio.gather(*[get_image_from_url(session, url, use_imageio) for url in urls])
 
     return [result for result in results if result is not None]
 
 
-async def image_walk(message: discord.Message, attempts=5):
+async def image_walk(message: discord.Message, attempts=5, use_imageio=False):
     # first, check if this image has a message
     x = await get_images(message, attempts=1)
     if len(x) > 0:
@@ -71,7 +69,7 @@ async def image_walk(message: discord.Message, attempts=5):
         except (AttributeError, KeyError, NotFound):
             pass
         else:
-            x = await get_images(msg.reference, attempts=1)
+            x = await get_images(msg.reference, attempts=1, use_imageio=False)
             if len(x) > 0:
                 return x[0]
     # next, perform the actual walk
